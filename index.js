@@ -3,7 +3,6 @@ const app = express();
 const dotenv = require("dotenv");
 const path = require("path");
 const cors = require("cors");
-const { mongoose } = require("mongoose");
 const connectDB = require("./database/db");
 
 // router location
@@ -30,20 +29,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-// Database connection with timeout
-const connectWithTimeout = async () => {
+// Database connection middleware
+app.use(async (req, res, next) => {
   try {
-    await Promise.race([
-      connectDB(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Database connection timeout")), 5000)
-      ),
-    ]);
-    console.log("Database connected successfully");
+    await connectDB();
+    next();
   } catch (error) {
     console.error("Database connection error:", error);
+    res.status(500).json({ error: "Database connection failed" });
   }
-};
+});
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -61,11 +56,10 @@ const port = process.env.PORT || 8040;
 
 // Only start the server if not in production
 if (process.env.NODE_ENV !== "production") {
-  app.listen(port, async () => {
+  app.listen(port, () => {
     console.log(
       `farhana's portfolio server running on http://localhost:${port}`
     );
-    await connectWithTimeout();
   });
 }
 
