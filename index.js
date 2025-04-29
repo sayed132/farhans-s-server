@@ -3,6 +3,7 @@ const app = express();
 const dotenv = require("dotenv");
 const path = require("path");
 const cors = require("cors");
+const { mongoose } = require("mongoose");
 const connectDB = require("./database/db");
 
 // router location
@@ -23,45 +24,21 @@ app.use(cors());
 //   ]
 // }));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Something went wrong!" });
-});
-
-// Database connection middleware
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("Database connection error:", error);
-    res.status(500).json({ error: "Database connection failed" });
-  }
-});
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+const port = process.env.PORT || 8040;
+
 // api router
-app.use("/api/profile", profileRoute);
-app.use("/api/service", serviceRoute);
-app.use("/api/portfolio", portfolioRoute);
-app.use("/api/edu", eduRoute);
+app.use("/profile", profileRoute);
+app.use("/service", serviceRoute);
+app.use("/portfolio", portfolioRoute);
+app.use("/edu", eduRoute);
+
+app.listen(port, async () => {
+  console.log(`farhana's portfolio server running on http://localhost:${port}`);
+  await connectDB();
+});
 
 app.get("/", (req, res) => {
   res.send("welcome farhana's portfolio server");
 });
-
-const port = process.env.PORT || 8040;
-
-// Only start the server if not in production
-if (process.env.NODE_ENV !== "production") {
-  app.listen(port, () => {
-    console.log(
-      `farhana's portfolio server running on http://localhost:${port}`
-    );
-  });
-}
-
-// Export the app for Vercel
-module.exports = app;
