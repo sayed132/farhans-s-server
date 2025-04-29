@@ -24,6 +24,27 @@ app.use(cors());
 //   ]
 // }));
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Something went wrong!" });
+});
+
+// Database connection with timeout
+const connectWithTimeout = async () => {
+  try {
+    await Promise.race([
+      connectDB(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Database connection timeout")), 5000)
+      ),
+    ]);
+    console.log("Database connected successfully");
+  } catch (error) {
+    console.error("Database connection error:", error);
+  }
+};
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // api router
@@ -44,7 +65,7 @@ if (process.env.NODE_ENV !== "production") {
     console.log(
       `farhana's portfolio server running on http://localhost:${port}`
     );
-    await connectDB();
+    await connectWithTimeout();
   });
 }
 
